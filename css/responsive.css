@@ -1,0 +1,158 @@
+/* responsive.css - Fully responsive layouts & media queries */
+
+/* Tablet & Smaller Desktops (Under 1160px) */
+@media (max-width: 1160px) {
+    :root {
+        --sidebar-width: 76px;
+    }
+    
+    .sidebar {
+        width: var(--sidebar-width);
+        padding: 24px 8px;
+        align-items: center;
+    }
+
+    .brand-logo-text {
+        display: none;
+    }
+
+    .sidebar-header {
+        padding: 8px 0 28px 0;
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav-label {
+        display: none;
+    }
+
+    .nav-item a, .nav-item button {
+        justify-content: center;
+        padding: 12px;
+        gap: 0;
+    }
+
+    .nav-item a:hover, .nav-item button:hover {
+        transform: none;
+    }
+
+    .main-content {
+        margin-left: var(--sidebar-width);
+    }
+}
+
+/* Mobile Devices (Under 768px) */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 0px;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .bottom-nav {
+        display: flex;
+    }
+
+    .mobile-topbar {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--topbar-height);
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-color);
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        z-index: 100;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: calc(var(--topbar-height) + 12px) 0 calc(var(--bottombar-height) + 20px) 0;
+    }
+
+    .feed-container {
+        max-width: 100%;
+        gap: 12px;
+    }
+
+    .stories-wrapper {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        padding: 12px 14px;
+    }
+
+    .post-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+
+    .modal-card {
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+
+    /* Profile Page Mobile adjustments */
+    .profile-header-container {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 16px !important;
+        padding: 16px !important;
+    }
+
+    .profile-avatar-large {
+        width: 80px !important;
+        height: 80px !important;
+    }
+
+    .profile-stats {
+        width: 100% !important;
+        justify-content: space-around !important;
+        border-top: 1px solid var(--border-light);
+        border-bottom: 1px solid var(--border-light);
+        padding: 10px 0;
+    }
+
+    /* Grid layout for mobile */
+    .profile-posts-grid, .explore-grid {
+        gap: 3px !important;
+    }
+
+    /* Direct Messages Mobile */
+    .messages-container {
+        flex-direction: column;
+        height: calc(100vh - var(--topbar-height) - var(--bottombar-height)) !important;
+    }
+
+    .messages-sidebar.hidden-mobile {
+        display: none !important;
+    }
+
+    .messages-chat-pane.hidden-mobile {
+        display: none !important;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .author-username {
+        font-size: 13px;
+    }
+
+    .post-caption {
+        font-size: 13px;
+    }
+
+    .btn {
+        padding: 7px 12px;
+        font-size: 13px;
+    }
+}

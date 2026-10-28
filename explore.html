@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore • InstaVibe</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="main-sidebar"></aside>
+
+        <!-- Mobile Topbar -->
+        <header class="mobile-topbar" id="mobile-topbar" style="display: none;"></header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div style="max-width: 935px; width: 100%; display: flex; flex-direction: column; gap: 24px;">
+                <!-- Search Bar Container -->
+                <div style="position: relative; width: 100%; max-width: 480px; margin: 0 auto;">
+                    <div style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: flex;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+                    <input type="text" id="explore-search-input" placeholder="Search creators, hashtags, or aesthetic vibes..." style="width: 100%; padding-left: 42px; border-radius: var(--radius-full); height: 44px; font-size: 14px;" />
+                </div>
+
+                <!-- Trending Hashtags Pill Carousel -->
+                <div style="display: flex; gap: 10px; overflow-x: auto; padding: 4px 0;" id="trending-tags-row">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Search Results Overlay (If user is searching) -->
+                <div id="search-results-container" style="display: none; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px;">
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Search Results</h4>
+                    <div id="search-results-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+
+                <!-- Suggested Accounts Strip -->
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <span style="font-size: 14px; font-weight: 700; color: var(--text-secondary);">Suggested For You</span>
+                        <a href="#" style="font-size: 12px; font-weight: 700; color: var(--primary);">See All</a>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;" id="suggested-creators-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Explore Image Grid -->
+                <div class="explore-grid" id="explore-gallery-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                    <!-- Injected explore gallery items -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" id="bottom-navigation"></nav>
+    </div>
+
+    <!-- Post Detail Lightbox Modal -->
+    <div class="modal-overlay" id="explore-detail-modal">
+        <div class="modal-card" style="max-width: 800px; height: 600px; display: flex; flex-direction: row; padding: 0;">
+            <div style="flex: 1.2; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img id="explore-modal-img" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            </div>
+            <div style="flex: 0.9; display: flex; flex-direction: column; background: var(--bg-surface); border-left: 1px solid var(--border-color);">
+                <div style="padding: 14px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between;">
+                    <span id="explore-modal-user" style="font-weight: 700; font-size: 14px;"></span>
+                    <button class="modal-close-btn" id="close-explore-detail">&times;</button>
+                </div>
+                <div style="flex: 1; padding: 16px; overflow-y: auto; font-size: 14px;">
+                    <p id="explore-modal-caption" style="line-height: 1.5;"></p>
+                </div>
+                <div style="padding: 14px 16px; border-top: 1px solid var(--border-light); font-size: 14px; font-weight: 700;">
+                    <span id="explore-modal-likes"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderNavigation, initAuthObserver } from "./js/app.js";
+        import { TRENDING_TAGS, SUGGESTED_CREATORS, EXPLORE_GALLERY, searchContent } from "./js/explore.js";
+        import { toggleFollowUser } from "./js/profile.js";
+
+        renderNavigation("explore");
+        initAuthObserver();
+
+        // Render Trending Tags
+        const tagsContainer = document.getElementById("trending-tags-row");
+        tagsContainer.innerHTML = TRENDING_TAGS.map(t => `
+            <button class="btn btn-secondary tag-pill-btn" style="border-radius: var(--radius-full); padding: 6px 16px; font-size: 13px; white-space: nowrap;">
+                ${t.tag} <span style="color: var(--text-muted); font-size: 11px; margin-left: 4px;">${t.postsCount}</span>
+            </button>
+        `).join('');
+
+        // Render Suggested Creators
+        const creatorsContainer = document.getElementById("suggested-creators-list");
+        creatorsContainer.innerHTML = SUGGESTED_CREATORS.map(c => `
+            <div style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+                <img src="${c.avatar}" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover;" />
+                <div>
+                    <a href="profile.html?user=${c.username}" style="font-size: 13.5px; font-weight: 700; display: block;">${c.username}</a>
+                    <span style="font-size: 11.5px; color: var(--text-muted); display: block;">${c.name}</span>
+                </div>
+                <button class="btn btn-primary follow-suggested-btn" data-username="${c.username}" style="width: 100%; padding: 6px 0; font-size: 12px; margin-top: 4px;">Follow</button>
+            </div>
+        `).join('');
+
+        creatorsContainer.querySelectorAll(".follow-suggested-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const username = btn.getAttribute("data-username");
+                const res = await toggleFollowUser(username, username);
+                if (res !== null) {
+                    btn.textContent = res ? "Following" : "Follow";
+                    btn.className = `btn ${res ? 'btn-secondary' : 'btn-primary'}`;
+                }
+            });
+        });
+
+        // Render Explore Gallery
+        const galleryContainer = document.getElementById("explore-gallery-grid");
+        galleryContainer.innerHTML = EXPLORE_GALLERY.map((post, i) => `
+            <div class="explore-item" data-explore-index="${i}" style="position: relative; aspect-ratio: 1/1; cursor: pointer; overflow: hidden; border-radius: var(--radius-sm); background: #000;">
+                <img src="${post.mediaUrl}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s;" />
+                <div class="explore-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 20px; color: #fff; opacity: 0; transition: opacity 0.2s;">
+                    <span>❤️ ${post.likesCount}</span>
+                    <span>💬 ${post.commentsCount}</span>
+                </div>
+            </div>
+        `).join('');
+
+        galleryContainer.querySelectorAll(".explore-item").forEach(item => {
+            const overlay = item.querySelector(".explore-overlay");
+            item.addEventListener("mouseenter", () => overlay.style.opacity = "1");
+            item.addEventListener("mouseleave", () => overlay.style.opacity = "0");
+            item.addEventListener("click", () => {
+                const index = parseInt(item.getAttribute("data-explore-index"), 10);
+                const post = EXPLORE_GALLERY[index];
+                openExploreDetail(post);
+            });
+        });
+
+        // Lightbox modal handler
+        const exploreModal = document.getElementById("explore-detail-modal");
+        function openExploreDetail(post) {
+            document.getElementById("explore-modal-img").src = post.mediaUrl;
+            document.getElementById("explore-modal-user").textContent = `@${post.username}`;
+            document.getElementById("explore-modal-caption").textContent = post.caption;
+            document.getElementById("explore-modal-likes").textContent = `${post.likesCount} likes`;
+            exploreModal.classList.add("active");
+        }
+        document.getElementById("close-explore-detail").onclick = () => exploreModal.classList.remove("active");
+
+        // Search Input Functionality
+        const searchInput = document.getElementById("explore-search-input");
+        const resultsContainer = document.getElementById("search-results-container");
+        const resultsList = document.getElementById("search-results-list");
+
+        let searchDebounce;
+        searchInput.addEventListener("input", () => {
+            clearTimeout(searchDebounce);
+            const val = searchInput.value.trim();
+            if (!val) {
+                resultsContainer.style.display = "none";
+                return;
+            }
+            searchDebounce = setTimeout(async () => {
+                const { users, posts } = await searchContent(val);
+                resultsContainer.style.display = "block";
+
+                if (users.length === 0 && posts.length === 0) {
+                    resultsList.innerHTML = `<div style="color: var(--text-muted); font-size: 13px;">No results found for "${val}"</div>`;
+                    return;
+                }
+
+                resultsList.innerHTML = `
+                    ${users.map(u => `
+                        <a href="profile.html?user=${u.username}" style="display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border-light);">
+                            <img src="${u.photoURL || u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" />
+                            <div>
+                                <span style="font-weight: 700; font-size: 13.5px; display: block;">${u.username}</span>
+                                <span style="font-size: 12px; color: var(--text-muted);">${u.fullName || u.name || ''}</span>
+                            </div>
+                        </a>
+                    `).join('')}
+                `;
+            }, 300);
+        });
+
+        // Pill clicks
+        document.querySelectorAll(".tag-pill-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const tag = btn.innerText.split(" ")[0];
+                searchInput.value = tag;
+                searchInput.dispatchEvent(new Event("input"));
+            });
+        });
+    </script>
+</body>
+</html>

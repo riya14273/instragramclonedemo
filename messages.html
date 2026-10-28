@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Messages • InstaVibe</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="main-sidebar"></aside>
+
+        <!-- Mobile Topbar -->
+        <header class="mobile-topbar" id="mobile-topbar" style="display: none;"></header>
+
+        <!-- Main Content -->
+        <main class="main-content" style="padding: 20px;">
+            <div class="messages-container" style="max-width: 935px; width: 100%; height: 85vh; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); display: flex; overflow: hidden; box-shadow: var(--shadow-sm);">
+                
+                <!-- Conversations Sidebar -->
+                <div class="messages-sidebar" style="width: 320px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 800; font-size: 16px;">Messages</span>
+                        <button id="new-msg-btn" style="color: var(--text-primary);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Conversation list items -->
+                    <div id="conversations-list" style="flex: 1; overflow-y: auto;">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Chat Pane -->
+                <div class="messages-chat-pane" style="flex: 1; display: flex; flex-direction: column; background: var(--bg-main);">
+                    <!-- Active Chat Header -->
+                    <div id="chat-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); display: flex; align-items: center; gap: 12px;">
+                        <img id="active-chat-avatar" src="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;" />
+                        <div>
+                            <span id="active-chat-name" style="font-weight: 700; font-size: 14px; display: block;"></span>
+                            <span id="active-chat-status" style="font-size: 11.5px; color: var(--success);">Active now</span>
+                        </div>
+                    </div>
+
+                    <!-- Message Bubble History -->
+                    <div id="chat-messages-container" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Messages dynamically rendered -->
+                    </div>
+
+                    <!-- Chat Input Bar -->
+                    <form id="chat-send-form" style="padding: 12px 16px; background: var(--bg-surface); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="chat-input" placeholder="Message..." style="flex: 1; border-radius: var(--radius-full); padding: 10px 18px; border: 1px solid var(--border-color);" />
+                        <button type="submit" class="btn btn-primary" style="border-radius: var(--radius-full); padding: 8px 18px;">Send</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" id="bottom-navigation"></nav>
+    </div>
+
+    <script type="module">
+        import { renderNavigation, initAuthObserver, showToast } from "./js/app.js";
+        import { getStoredConversations, sendDirectMessage } from "./js/messages.js";
+
+        renderNavigation("messages");
+        initAuthObserver();
+
+        const convs = getStoredConversations();
+        let activeConvId = convs[0]?.id;
+
+        const convsListEl = document.getElementById("conversations-list");
+        const messagesEl = document.getElementById("chat-messages-container");
+        const chatForm = document.getElementById("chat-send-form");
+        const chatInput = document.getElementById("chat-input");
+
+        function renderConversationsList() {
+            convsListEl.innerHTML = convs.map(c => `
+                <div class="conv-item ${c.id === activeConvId ? 'active' : ''}" data-conv-id="${c.id}" style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; border-bottom: 1px solid var(--border-light); ${c.id === activeConvId ? 'background: var(--bg-hover);' : ''}">
+                    <img src="${c.participant.avatar}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;" />
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-weight: 700; font-size: 13.5px;">${c.participant.fullName}</span>
+                            <span style="font-size: 11px; color: var(--text-muted);">${c.lastTime}</span>
+                        </div>
+                        <p style="font-size: 12.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">${c.lastMessage}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            convsListEl.querySelectorAll(".conv-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    activeConvId = item.getAttribute("data-conv-id");
+                    renderConversationsList();
+                    loadActiveChat();
+                });
+            });
+        }
+
+        function loadActiveChat() {
+            const conv = convs.find(c => c.id === activeConvId);
+            if (!conv) return;
+
+            document.getElementById("active-chat-avatar").src = conv.participant.avatar;
+            document.getElementById("active-chat-name").textContent = conv.participant.fullName;
+
+            messagesEl.innerHTML = conv.messages.map(m => `
+                <div style="display: flex; justify-content: ${m.isMine ? 'flex-end' : 'flex-start'};">
+                    <div style="max-width: 65%; padding: 10px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; ${m.isMine ? 'background: var(--primary); color: #fff; border-bottom-right-radius: 4px;' : 'background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-bottom-left-radius: 4px;'}">
+                        ${m.text}
+                    </div>
+                </div>
+            `).join('');
+
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        chatForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            const newMsg = await sendDirectMessage(activeConvId, text);
+            if (newMsg) {
+                chatInput.value = "";
+                const bubble = document.createElement("div");
+                bubble.style.cssText = "display: flex; justify-content: flex-end;";
+                bubble.innerHTML = `
+                    <div style="max-width: 65%; padding: 10px 16px; border-radius: 18px; font-size: 14px; line-height: 1.4; background: var(--primary); color: #fff; border-bottom-right-radius: 4px;">
+                        ${newMsg.text}
+                    </div>
+                `;
+                messagesEl.appendChild(bubble);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+                renderConversationsList();
+            }
+        });
+
+        renderConversationsList();
+        loadActiveChat();
+
+        document.getElementById("new-msg-btn").addEventListener("click", () => {
+            const user = prompt("Enter username of the creator you want to message:");
+            if (user) {
+                showToast(`Started conversation with @${user}!`, "success");
+            }
+        });
+    </script>
+</body>
+</html>
